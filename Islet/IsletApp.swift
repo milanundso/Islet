@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 enum SettingsKey {
     static let expandOnHover = "expandOnHover"
@@ -40,7 +41,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 struct SettingsMenu: View {
+    @AppStorage(SettingsKey.expandOnHover) private var expandOnHover = true
+    @AppStorage(SettingsKey.showVolume) private var showVolume = true
+    @AppStorage(SettingsKey.showCharging) private var showCharging = true
+    @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
+
     var body: some View {
+        Toggle("Expand on hover", isOn: $expandOnHover)
+        Toggle("Volume indicator", isOn: $showVolume)
+        Toggle("Charging indicator", isOn: $showCharging)
+        Divider()
+        Toggle("Launch at login", isOn: Binding(
+            get: { launchesAtLogin },
+            set: { shouldLaunch in
+                if shouldLaunch {
+                    try? SMAppService.mainApp.register()
+                } else {
+                    try? SMAppService.mainApp.unregister()
+                }
+                launchesAtLogin = SMAppService.mainApp.status == .enabled
+            }
+        ))
+        Divider()
         Button("Quit Islet") {
             NSApp.terminate(nil)
         }

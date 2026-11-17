@@ -127,11 +127,11 @@ struct CompactActivityView: View {
         HStack(spacing: 0) {
             leadingSymbol
                 .font(.system(size: 13, weight: .semibold))
-                .frame(width: model.activitySideWidth, alignment: .leading)
+                .frame(width: model.activitySideWidth - 12, alignment: .leading)
                 .padding(.leading, 12)
             Spacer(minLength: 0)
             trailingDetail
-                .frame(width: model.activitySideWidth, alignment: .trailing)
+                .frame(width: model.activitySideWidth - 12, alignment: .trailing)
                 .padding(.trailing, 12)
         }
         .frame(height: model.notchSize.height)

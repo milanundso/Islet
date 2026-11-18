@@ -141,12 +141,19 @@ struct CompactActivityView: View {
     private var leadingSymbol: some View {
         switch activity {
         case .volume(let level, let isMuted):
-            Image(systemName: isMuted || level == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", variableValue: Double(level))
+            Image(systemName: volumeSymbol(level: level, isMuted: isMuted))
                 .foregroundStyle(.white)
         case .power(_, let isPluggedIn):
             Image(systemName: isPluggedIn ? "bolt.fill" : "battery.75percent")
                 .foregroundStyle(isPluggedIn ? Color.green : Color.white)
         }
+    }
+
+    private func volumeSymbol(level: Float, isMuted: Bool) -> String {
+        if isMuted || level == 0 { return "speaker.slash.fill" }
+        if level < 0.34 { return "speaker.wave.1.fill" }
+        if level < 0.67 { return "speaker.wave.2.fill" }
+        return "speaker.wave.3.fill"
     }
 
     @ViewBuilder

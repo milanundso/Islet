@@ -63,6 +63,7 @@ final class NowPlayingMonitor: ObservableObject {
     @Published private(set) var track: Track?
     @Published private(set) var isPlaying = false
     @Published private(set) var artwork: NSImage?
+    @Published private(set) var backdrop: NSImage?
     @Published private(set) var accentColor = Color.white
     @Published private(set) var anchorPosition = 0.0
 
@@ -236,6 +237,7 @@ final class NowPlayingMonitor: ObservableObject {
 
     private func setArtwork(_ image: NSImage?) {
         artwork = image
+        backdrop = image?.softened(sigma: 7)
         accentColor = image?.accentColor ?? .white
     }
 }

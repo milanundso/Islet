@@ -37,35 +37,22 @@ enum SkyLightBridge {
     }
 }
 
-struct LockScreenPlayerView: View {
-    @ObservedObject var nowPlaying: NowPlayingMonitor
-
-    var body: some View {
-        PlayerContent(nowPlaying: nowPlaying)
-            .padding(20)
-            .frame(width: 380)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
-            )
-            .environment(\.colorScheme, .dark)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
 final class LockScreenController {
-    private static let windowSize = CGSize(width: 440, height: 230)
     private let nowPlaying: NowPlayingMonitor
     private let window: NSWindow
+    private let typingQuietSeconds = 6.0
     private var isLocked = false
     private var hasTrack = false
+    private var isShowing = false
+    private var lockDate = Date()
+    private var steppedAsideUntil = Date.distantPast
+    private var activityTimer: Timer?
     private var subscriptions = Set<AnyCancellable>()
 
     init(nowPlaying: NowPlayingMonitor) {
         self.nowPlaying = nowPlaying
         window = NSWindow(
-            contentRect: NSRect(origin: .zero, size: LockScreenController.windowSize),
+            contentRect: NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1512, height: 982),
             styleMask: .borderless,
             backing: .buffered,
             defer: false
@@ -74,19 +61,20 @@ final class LockScreenController {
         window.backgroundColor = .clear
         window.hasShadow = false
         window.isReleasedWhenClosed = false
+        window.alphaValue = 0
         window.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()) + 1)
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        window.contentView = FirstMouseHostingView(rootView: LockScreenPlayerView(nowPlaying: nowPlaying))
+        window.contentView = FirstMouseHostingView(rootView: LockScreenView(nowPlaying: nowPlaying) { [weak self] in
+            self?.stepAside()
+        })
         SkyLightBridge.moveAboveLockScreen(window)
 
         let distributedCenter = DistributedNotificationCenter.default()
         distributedCenter.addObserver(forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
-            self?.isLocked = true
-            self?.updateVisibility()
+            self?.handleLockChange(isNowLocked: true)
         }
         distributedCenter.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
-            self?.isLocked = false
-            self?.updateVisibility()
+            self?.handleLockChange(isNowLocked: false)
         }
         nowPlaying.$track
             .receive(on: DispatchQueue.main)
@@ -97,20 +85,55 @@ final class LockScreenController {
             .store(in: &subscriptions)
     }
 
+    private func handleLockChange(isNowLocked: Bool) {
+        isLocked = isNowLocked
+        lockDate = Date()
+        steppedAsideUntil = .distantPast
+        activityTimer?.invalidate()
+        activityTimer = nil
+        if isNowLocked {
+            activityTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+                self?.updateVisibility()
+            }
+        }
+        updateVisibility()
+    }
+
+    private func stepAside() {
+        steppedAsideUntil = Date().addingTimeInterval(typingQuietSeconds)
+        updateVisibility()
+    }
+
+    private var isUserTyping: Bool {
+        let secondsSinceKey = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
+        let secondsSinceLock = Date().timeIntervalSince(lockDate) - 1
+        return secondsSinceKey < min(typingQuietSeconds, secondsSinceLock)
+    }
+
     private func updateVisibility() {
         let isEnabled = UserDefaults.standard.bool(forKey: SettingsKey.showLockScreenPlayer)
-        guard isLocked, hasTrack, isEnabled else {
-            window.orderOut(nil)
-            return
+        let shouldShow = isLocked && hasTrack && isEnabled && !isUserTyping && Date() > steppedAsideUntil
+        guard shouldShow != isShowing else { return }
+        isShowing = shouldShow
+        if shouldShow {
+            let screen = NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main
+            if let screen {
+                window.setFrame(screen.frame, display: true)
+            }
+            window.orderFrontRegardless()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.6
+                window.animator().alphaValue = 1
+            }
+        } else {
+            let fadeDuration = isLocked ? 0.25 : 0
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = fadeDuration
+                window.animator().alphaValue = 0
+            }, completionHandler: { [weak self] in
+                guard let self, !self.isShowing else { return }
+                self.window.orderOut(nil)
+            })
         }
-        let screen = NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main
-        if let screen {
-            let origin = CGPoint(
-                x: screen.frame.midX - LockScreenController.windowSize.width / 2,
-                y: screen.frame.minY + screen.frame.height * 0.2
-            )
-            window.setFrameOrigin(origin)
-        }
-        window.orderFrontRegardless()
     }
 }

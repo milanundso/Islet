@@ -53,7 +53,7 @@ struct SettingsMenu: View {
         Toggle("Expand on hover", isOn: $expandOnHover)
         Toggle("Volume indicator", isOn: $showVolume)
         Toggle("Charging indicator", isOn: $showCharging)
-        Toggle("Lock screen player", isOn: $showLockScreenPlayer)
+        Toggle("Lock screen artwork", isOn: $showLockScreenPlayer)
         Divider()
         Toggle("Launch at login", isOn: Binding(
             get: { launchesAtLogin },

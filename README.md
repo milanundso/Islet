@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" width="128" alt="Islet icon">
+
 # Islet
 
 **A Dynamic Island for the MacBook notch.**
@@ -31,11 +33,11 @@ Islet is small (about 1,300 lines of Swift), has no dependencies and lives in th
 
 <img src="docs/expanded.png" alt="Expanded player">
 
-- **Now playing** – cover art on the left, animated bars on the right, tinted with the colour of the cover.
-- **Hover to expand** – a full player drops out of the notch with a scrubber and controls. Click the cover to jump to the app.
-- **Volume and charging** – change the volume or plug in the charger and the notch shows it for a moment.
-- **Lock screen** – the cover fills the screen as a slowly drifting, blurred backdrop, with the cover itself, a clock and the controls on top.
-- **Menu bar toggles** – every feature can be switched off, plus launch at login.
+- **Now playing**
+- **Hover to expand**
+- **Volume and charging**
+- **Lock screen**
+- **Menu bar toggles**
 
 ### Lock screen
 
@@ -73,13 +75,6 @@ Hit Run. To get a zipped release build instead:
 
 The zip ends up in `dist/`.
 
-## Good to know
-
-- Works with **Spotify** and **Apple Music**. Audio from browsers or other players is not picked up.
-- Needs macOS 14 or newer. On Macs without a notch it shows up as a pill at the top of the screen.
-- The lock screen view uses a private macOS API to draw above the lock screen. It works on my machine, but Apple can break it with any update.
-- The system volume overlay still appears next to the one in the notch.
-
 ## How it's put together
 
 ```
@@ -91,7 +86,3 @@ Islet/
 ```
 
 No packages, no helper tools, just AppKit and SwiftUI.
-
----
-
-<div align="center"><sub>Made by <a href="https://github.com/milanundso">Milan</a></sub></div>

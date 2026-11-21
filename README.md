@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/icon.png" width="128" alt="Islet icon">
-
 # Islet
 
 **A Dynamic Island for the MacBook notch.**

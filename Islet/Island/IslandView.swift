@@ -51,7 +51,8 @@ private struct BlurFade: ViewModifier {
 struct IslandView: View {
     @ObservedObject var model: IslandModel
 
-    private let islandSpring = Animation.spring(response: 0.42, dampingFraction: 0.76)
+    private let expandSpring = Animation.spring(response: 0.42, dampingFraction: 0.76)
+    private let settleSpring = Animation.spring(response: 0.36, dampingFraction: 1)
 
     private var contentTransition: AnyTransition {
         .modifier(active: BlurFade(radius: 10, opacity: 0), identity: BlurFade(radius: 0, opacity: 1))
@@ -63,6 +64,7 @@ struct IslandView: View {
         let presentation = model.presentation
         let earRadius: CGFloat = presentation == .idle ? 0 : 7
         let bottomRadius: CGFloat = presentation == .expanded ? 28 : 11
+        let islandSpring = presentation == .expanded ? expandSpring : settleSpring
 
         ZStack(alignment: .top) {
             content(for: presentation)
